@@ -97,22 +97,22 @@ def encode_instruction(opcode, operand, current_address):
     if opcode in {"PUSH.RL", "PUSH.RA", "PUSH.SL", "PUSH.SA", "ADD", "JUMP.ABS"}:
         # Layout: `xxxx_ooo0`
         suffix = 0b0
-        print("One-Byte:", bin(operand), "(", opcode,":", bin(op), ")", bin(suffix))
+        print("One-Byte:", operand, "(", opcode,":", bin(op), ")", bin(suffix))
         encoded = struct.pack('b', (operand << 4) | (op << 1) | suffix)
 
     # Two-byte instructions
     elif opcode in {"PUSH.IL", "PUSH.IA"}:
         # Layout: `xxxx_xxxx oooo_0001`
         suffix = 0b0001
-        print("Two-Byte:", bin(operand), "(", opcode,":", bin(op), ")", bin(suffix))
-        encoded = struct.pack('<i', (operand << 8) | (op << 4) | suffix)
+        print("Two-Byte:", operand, "(", opcode,":", bin(op), ")", bin(suffix))
+        encoded = struct.pack('<h', (operand << 8) | (op << 4) | suffix)
 
     # Three-byte instructions
     elif opcode == "JUMP":
         # Layout: `xxxx_xxxx xxxx_oooo oooo_0101`
         suffix = 0b0101
         offset = current_address + operand
-        print("Three-Byte:", bin(operand), "(", opcode,":", bin(op), ")", bin(suffix))
+        print("Three-Byte:", operand, "(", opcode,":", bin(op), ")", bin(suffix))
         encoded = struct.pack('<i', (offset << 12) | (op << 4) | suffix)
 
     print("\t", bin(int.from_bytes(encoded, byteorder='little')))
