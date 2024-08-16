@@ -4,19 +4,19 @@ import sys
 # Opcode dictionary based on the PANv0 ISA
 OPCODES = {
     # One-byte instructions (3-bit opcode)
-    "PUSH.RL":  0b001,
-    "PUSH.RA":  0b010,
-    "PUSH.SL":  0b011,
-    "PUSH.SA":  0b100,
-    "ADD":      0b101,
-    "JUMP.ABS": 0b111,
+    "PUSH.RL":  0b_001,
+    "PUSH.RA":  0b_010,
+    "PUSH.SL":  0b_011,
+    "PUSH.SA":  0b_100,
+    "ADD":      0b_101,
+    "JUMP.ABS": 0b_111,
 
     # Two-byte instructions (4-bit opcode)
-    "PUSH.IL":  0b0001,
-    "PUSH.IA":  0b0010,
+    "PUSH.IL":  0b_0001,
+    "PUSH.IA":  0b_0010,
 
-    # Three-byte instructions (4-bit opcode)
-    "JUMP":     0b0011,
+    # Three-byte instructions (8-bit opcode)
+    "JUMP":     0b_0000_0011,
 }
 
 
@@ -47,7 +47,6 @@ def assemble_program(asm_code):
     labels = {}
     instructions = []
     current_address = 0
-
 
     # First pass: resolve labels
     for line in asm_code:
