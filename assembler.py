@@ -35,6 +35,7 @@ def main():
 
     # Assemble and write to output file
     binary_code = assemble_program(asm_code)
+    print(binary_code)
     with open(output_file, 'wb') as f:
         f.write(binary_code)
 
@@ -92,20 +93,28 @@ def encode_instruction(opcode, operand, current_address):
     op = OPCODES[opcode]
     operand = int(operand)
 
-    print(operand, opcode)
 
     # One-byte instructions
     if opcode in {"PUSH.RL", "PUSH.RA", "PUSH.SL", "PUSH.SA", "ADD", "JUMP.ABS"}:
-        encoded = struct.pack('B', (operand << 4) | (op << 1))
+        # Layout: `xxxx_ooo0`
+        suffix = 0b0
+        print(bin(operand), bin(op), bin(suffix))
+        encoded = struct.pack('B', (operand << 4) | (op << 1) | suffix)
 
     # Two-byte instructions
     elif opcode in {"PUSH.IL", "PUSH.IA"}:
-        encoded = struct.pack('>H', ((op << 12) | (operand & 0xFFF)))
+        # Layout: `xxxx_xxxx oooo_0001`
+        suffix = 0b0001
+        print(bin(operand), bin(op), bin(suffix))
+        encoded = struct.pack('>H', ((op << 12) | (operand & 0xFFF)) | suffix)
 
     # Three-byte instructions
     elif opcode == "JUMP":
+        # Layout: `xxxx_xxxx xxxx_oooo oooo_0101`
+        suffix = 0b0101
         offset = current_address + operand
-        encoded = struct.pack('>I', (op << 20) | (offset & 0xFFFFF))
+        print(bin(operand), bin(op), bin(suffix))
+        encoded = struct.pack('>I', (op << 20) | (offset & 0xFFFFF) | suffix)
 
     print("\tEncoded:", encoded)
 
