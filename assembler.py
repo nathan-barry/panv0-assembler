@@ -20,7 +20,6 @@ OPCODES = {
 }
 
 
-
 def main():
     if len(sys.argv) < 2:
         print(f"Usage: {sys.argv[0]} <input file> [<output file>]")
@@ -35,10 +34,20 @@ def main():
 
     # Assemble and write to output file
     binary_code = assemble_program(asm_code)
-    print(binary_code)
+
+    s = str(bin(int.from_bytes(binary_code, byteorder='little')))[2:]
+    s = ("0" * (8 - (len(s) % 8))) + s
+    ss = ""
+    for i in range(len(s)):
+        if i % 4 == 0 and i != 0:
+            if i % 8 == 0:
+                ss += " "
+            else:
+                ss += "_"
+        ss += s[i]
+    print(f"\nOutput Binary:\n{ss}")
     with open(output_file, 'wb') as f:
         f.write(binary_code)
-
 
 
 def assemble_program(asm_code):
@@ -69,9 +78,10 @@ def assemble_program(asm_code):
             instructions.append(line)
             current_address += instruction_length
 
-    print(instructions)
+    print("Instructions:\n", instructions)
 
     # Second pass: generate binary code
+    print("\nGenerating Program:")
     for line in instructions:
         opcode, operand = line.split()
         # If the operand is a label, resolve it to its address
@@ -85,7 +95,6 @@ def assemble_program(asm_code):
     return binary_code
 
 
-
 def encode_instruction(opcode, operand, current_address):
     """Encode an instruction into binary format."""
     encoded = b''
@@ -96,28 +105,44 @@ def encode_instruction(opcode, operand, current_address):
     if opcode in {"PUSH.RL", "PUSH.RA", "PUSH.SL", "PUSH.SA", "ADD", "JUMP.ABS"}:
         # Layout: `xxxx_ooo0`
         suffix = 0b0
-        print("One-Byte:", operand, "(", opcode,":", bin(op), ")", bin(suffix))
         encoded = struct.pack('b', (operand << 4) | (op << 1) | suffix)
+        # Debug info
+        print(f"One-Byte: xxxx_ooo0\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\n\toperand: {operand}\t(binary) {bin(operand)}")
+        s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
+        s = ("0"*(8-len(s))) + s
 
     # Two-byte instructions
     elif opcode in {"PUSH.IL", "PUSH.IA"}:
         # Layout: `xxxx_xxxx oooo_0001`
         suffix = 0b0001
-        print("Two-Byte:", operand, "(", opcode,":", bin(op), ")", bin(suffix))
         encoded = struct.pack('<h', (operand << 8) | (op << 4) | suffix)
+        # Debug info
+        print(f"Two-Byte: xxxx_xxxx oooo_0001\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\n\toperand: {operand}\t(binary) {bin(operand)}")
+        s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
+        s = ("0"*(16-len(s))) + s
 
     # Three-byte instructions
     elif opcode == "JUMP":
         # Layout: `xxxx_xxxx xxxx_oooo oooo_0101`
         suffix = 0b0101
         offset = current_address + operand
-        print("Three-Byte:", operand, "(", opcode,":", bin(op), ")", bin(suffix))
         encoded = struct.pack('<i', (offset << 12) | (op << 4) | suffix)
+        # Debug info
+        print(f"Three-Byte: xxxx_xxxx xxxx_oooo oooo_0101\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\n\toperand: {operand}\t(binary) {bin(operand)}")
+        s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
+        s = ("0"*(24-len(s))) + s
 
-    print("\t", bin(int.from_bytes(encoded, byteorder='little')))
+    ss = ""
+    for i in range(len(s)):
+        if i % 4 == 0 and i != 0:
+            if i % 8 == 0:
+                ss += " "
+            else:
+                ss += "_"
+        ss += s[i]
+    print(f"\tbinary output:{ss}")
 
     return encoded
-
 
 
 if __name__ == "__main__":
