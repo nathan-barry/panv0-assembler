@@ -126,7 +126,7 @@ def encode_instruction(opcode, operand, current_address):
         # Layout: `xxxx_xxxx xxxx_oooo oooo_0101`
         suffix = 0b0101
         offset = current_address + operand
-        encoded = struct.pack('<i', (offset << 12) | (op << 4) | suffix)
+        encoded = struct.pack('<i', (offset << 12) | (op << 4) | suffix)[0:3]
         # Debug info
         print(f"Three-Byte: xxxx_xxxx xxxx_oooo oooo_0101\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\n\toperand: {operand}\t(binary) {bin(operand)}")
         s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
@@ -140,7 +140,7 @@ def encode_instruction(opcode, operand, current_address):
             else:
                 ss += "_"
         ss += s[i]
-    print(f"\tbinary output:{ss}")
+    print(f"\tbinary output: {ss}")
 
     return encoded
 
