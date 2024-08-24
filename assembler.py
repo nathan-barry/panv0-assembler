@@ -3,20 +3,15 @@ import sys
 
 # Opcode dictionary based on the PANv0 ISA
 OPCODES = {
-    # One-byte instructions (3-bit opcode)
-    "PUSH.RL":  0b_001,
-    "PUSH.RA":  0b_010,
-    "PUSH.SL":  0b_011,
-    "PUSH.SA":  0b_100,
-    "ADD":      0b_101,
+    "PUSH.IL":  0b_000,
+    "PUSH.IA":  0b_001,
+    "PUSH.SL":  0b_010,
+    "PUSH.SA":  0b_011,
+    "PUSH.RL":  0b_100,
+    "PUSH.RA":  0b_101,
+    "ADD":      0b_110,
     "JUMP.ABS": 0b_111,
-
-    # Two-byte instructions (4-bit opcode)
-    "PUSH.IL":  0b_0001,
-    "PUSH.IA":  0b_0010,
-
-    # Three-byte instructions (8-bit opcode)
-    "JUMP":     0b_0000_0011,
+    "JUMP":     0b_1000
 }
 
 
