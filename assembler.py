@@ -40,7 +40,15 @@ def main():
             else:
                 ss += "_"
         ss += s[i]
-    print(f"\nOutput Binary:\n{ss}")
+
+    ss = ss.split(" ")[::-1]
+    print("\nOutput Binary:")
+    i = 0
+    while i < len(ss):
+        hx = str(hex(i))[2:]
+        print(("0"*(8-len(hx)))+hx+":", " ".join(ss[i:i+6]))
+        i += 6
+
     with open(output_file, 'wb') as f:
         f.write(binary_code)
 
