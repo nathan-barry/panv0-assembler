@@ -1,19 +1,19 @@
 import struct
 import sys
 
+# TODO:
+# - Add PUSH SPM and special registers shortcut "PUSH SP => PUSH.R 0, PUSH SPM3 => PUSH.S 3"
+
 # Opcode dictionary based on the PANv0 ISA
 OPCODES = {
-    "PUSH.IL":  0b_000,
-    "PUSH.IA":  0b_001,
-    "PUSH.SL":  0b_010,
-    "PUSH.SA":  0b_011,
-    "PUSH.RL":  0b_100,
-    "PUSH.RA":  0b_101,
-    "ADD":      0b_110,
-    "JUMP.ABS": 0b_111,
-    "JUMP":     0b_1000
+    "PREP":     0,
+    "PUSH.I":   1,
+    "PUSH.S":   2,
+    "PUSH.R":   3,
+    "ADD":      4,
+    "JUMP.ABS": 5,
+    "JUMP":     6,
 }
-
 
 def main():
     if len(sys.argv) < 2:
@@ -104,36 +104,44 @@ def encode_instruction(opcode, operand, current_address):
     op = OPCODES[opcode]
     operand = int(operand)
 
-    # One-byte instructions
-    if opcode in {"PUSH.RL", "PUSH.RA", "PUSH.SL", "PUSH.SA", "ADD", "JUMP.ABS"}:
-        # Layout: `xxxx_ooo0`
+
+    if operand >= -8 and operand <= 7:
+        # One-byte Instr, Layout: `xxxx_ooo0`
         suffix = 0b0
-        encoded = struct.pack('b', (operand << 4) | (op << 1) | suffix)
+        encoded = struct.pack('<i', (operand << 4) | (op << 1) | suffix)[0:1]
         # Debug info
-        print(f"One-Byte: xxxx_ooo0\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\n\toperand: {operand}\t(binary) {bin(operand)}")
+        print(f"One-Byte: xxxx_ooo0\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
         s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
         s = ("0"*(8-len(s))) + s
-
-    # Two-byte instructions
-    elif opcode in {"PUSH.IL", "PUSH.IA"}:
-        # Layout: `xxxx_xxxx oooo_0001`
+    elif operand >= -128 and operand <= 127:
+        # Two-byte Instr, Layout: `xxxx_xxxx oooo_0001`
         suffix = 0b0001
-        encoded = struct.pack('<h', (operand << 8) | (op << 4) | suffix)
+        encoded = struct.pack('<i', (operand << 8) | (op << 4) | suffix)[0:2]
         # Debug info
-        print(f"Two-Byte: xxxx_xxxx oooo_0001\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\n\toperand: {operand}\t(binary) {bin(operand)}")
+        print(f"Two-Byte: xxxx_xxxx oooo_0001\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
         s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
         s = ("0"*(16-len(s))) + s
-
-    # Three-byte instructions
-    elif opcode == "JUMP":
-        # Layout: `xxxx_xxxx xxxx_oooo oooo_0101`
+    elif operand >= -8192 and operand <= 8191:
+        # Three-byte Instr, Layout: `xxxx_xxxx xxxx_xxoo oooo_0101`
         suffix = 0b0101
         offset = current_address + operand
-        encoded = struct.pack('<i', (offset << 12) | (op << 4) | suffix)[0:3]
+        encoded = struct.pack('<i', (offset << 10) | (op << 4) | suffix)[0:3]
         # Debug info
-        print(f"Three-Byte: xxxx_xxxx xxxx_oooo oooo_0101\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\n\toperand: {operand}\t(binary) {bin(operand)}")
+        print(f"Three-Byte: xxxx_xxxx xxxx_xxoo oooo_0101\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
         s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
         s = ("0"*(24-len(s))) + s
+    elif operand >= -524288 and operand <= 524287:
+        # Four-byte Instr, Layout: `xxxx_xxxx xxxx_xxxx xxxx_oooo oooo_1101`
+        suffix = 0b1101
+        offset = current_address + operand
+        encoded = struct.pack('<i', (offset << 12) | (op << 4) | suffix)
+        # Debug info
+        print(f"Four-Byte: xxxx_xxxx xxxx_xxxx xxxx_oooo oooo_0101\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
+        s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
+        s = ("0"*(32-len(s))) + s
+    else:
+        raise "Operand out of range, doesn't fit in 4 byte instruction"
+
 
     ss = ""
     for i in range(len(s)):
