@@ -14,19 +14,18 @@ sum:
 	; SPM-1: int arr[]
 
 	; SP -= 8
-	PUSH.R 0   ; dst = r0 = SP
-	PUSH.R 0   ; op1 = r0 = SP
+	PUSH SP   ; dst = r0 = SP
+	PUSH SP   ; op1 = r0 = SP
 	PUSH.I -8  ; op2 = -8
 	ADD 0       ; Unsized add
 
 	; total = 0
-	PREP 1
-	PUSH.R 0   ; dst = *r0 = *SP
+	PUSHA SP 1  ; dst = *r0 = *SP
 	ADD 0       ; Unsized add
 
 	; SPM0 = &i
-	PUSH.S 0   ; dst = SPM0
-	PUSH.R 0   ; op1 = r0 = SP
+	PUSH SPM0   ; dst = SPM0
+	PUSH SP   ; op1 = r0 = SP
 	PUSH.I 4   ; op2 = 4
 	ADD 4       ; 4B Add
 	; i = 0
