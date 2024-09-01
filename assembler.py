@@ -87,10 +87,10 @@ def assemble_program(asm_code):
     # Second pass: generate binary code
     print("\nGenerating Program:")
     for line in instructions:
-        tmp = line.split()
-        if len(tmp) == 1:
-            tmp.append("0")
-        opcode, operand = tmp[0], tmp[1]
+        args = line.split()
+        if len(args) == 1:
+            args.append("0")
+        opcode, operand = args[0], args[1]
         # If the operand is a label, resolve it to its address
         if operand in labels:
             operand = labels[operand]

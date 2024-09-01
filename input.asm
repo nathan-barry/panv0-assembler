@@ -20,7 +20,7 @@ main:
 	PUSH -20
 	ADD
 	;Init SPM0 as *arr
-	PUSHA SPM1 4
+	PUSHA SPM-1 4
 	PUSH SP
 	ADD
 	
