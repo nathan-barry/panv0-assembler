@@ -7,6 +7,23 @@
 ;    return total;`
 ;  }
 ;
+;  int main() {
+;    int arr[5] = {1, 2, 3, 4, 5};
+;    sum(arr, 5);
+;  }
+;
+
+main:
+	; Make space for arr
+	PUSH SP
+	PUSH SP
+	PUSH -20
+	ADD
+	;Init SPM0 as *arr
+	PUSHA SPM1 4
+	PUSH SP
+	ADD
+	
 
 sum:
 	; Args in SPM regs
@@ -20,24 +37,23 @@ sum:
 	ADD 0       ; Unsized add
 
 	; total = 0
-	PUSHA SP 1  ; dst = *r0 = *SP
+	PUSHA SP 4  ; dst = *r0 = *SP
 	ADD 0       ; Unsized add
 
-	; SPM0 = &i
-	PUSH SPM0   ; dst = SPM0
+	; Init SPM0 as &i
+	PUSHA SPM0 4  ; dst = SPM0
 	PUSH SP   ; op1 = r0 = SP
-	PUSH.I 4   ; op2 = 4
-	ADD 4       ; 4B Add
+	PUSH 4   ; op2 = 4
+	ADD 0       ; 4B Add
 	; i = 0
-	PREP 1
-	PUSH.S 0   ; dst = *SPM0 = i
-	ADD 4       ; 4B Add
+	PUSHA SPM0 4 ; dst = *SPM0 = i
+	ADD 0       ; 4B Add
 
 	; exit loop if i > size
-	PUSH.I 2   ; cond = 2 = LTE
-	PUSH.S -2  ; op1 = SPM-2 = size
-	PUSH.S 0   ; op2 = SPM0 = i
-	JUMP 17     ; to .loop_end
+	PUSH 2   ; cond = 2 = LTE
+	PUSH.S -2   ; op1 = SPM-2 = size
+	PUSHA SPM0 4  ; op2 = SPM0 = i
+	JUMP 22     ; to .loop_end. factors size of self.
 
 .loop_begin:
 	; SPM1 = arr+i
@@ -69,5 +85,5 @@ sum:
 	PUSH.I 8   ; op2 = 8
 	ADD 0       ; Unsized add
 	; return
-	PUSH.R 0   ; target = r0 = SP
+	PUSH.R 2   ; target = r2 = LR
 	JUMP.ABS 3  ; TODO: Is this 3 (LE)?
