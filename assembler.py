@@ -145,7 +145,7 @@ def assemble_program(asm_code):
                 binary_code += encoded_instruction
                 current_address += len(encoded_instruction)
 
-                encoded_instruction = encode_instruction("PUSH.S", operand[3], current_address)
+                encoded_instruction = encode_instruction("PUSH.S", operand[3:], current_address)
             else:
                 raise "Invalid PUSH spm/special register:" + line
         elif opcode == "USA" and len(args) == 2:
