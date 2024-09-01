@@ -106,7 +106,11 @@ def assemble_program(asm_code):
             elif operand[0:3] == "SPM":
                 encoded_instruction = encode_instruction("PUSH.S", operand[3], current_address)
             else:
-                raise "Invalid PUSH spm/special register:" + line
+                try:
+                    numVal = int(operand)
+                    encoded_instruction = encode_instruction("PUSH.I", operand, current_address)
+                except ValueError:
+                    raise "Invalid PUSH spm/special register:" + line
 
         elif opcode == "PUSHA" and len(tmp) == 3:
             if operand == "SP":

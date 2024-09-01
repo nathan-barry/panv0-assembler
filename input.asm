@@ -16,7 +16,7 @@ sum:
 	; SP -= 8
 	PUSH SP   ; dst = r0 = SP
 	PUSH SP   ; op1 = r0 = SP
-	PUSH.I -8  ; op2 = -8
+	PUSH -8  ; op2 = -8
 	ADD 0       ; Unsized add
 
 	; total = 0
