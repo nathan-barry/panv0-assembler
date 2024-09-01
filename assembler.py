@@ -87,14 +87,14 @@ def assemble_program(asm_code):
     # Second pass: generate binary code
     print("\nGenerating Program:")
     for line in instructions:
-        tmp = line.split()
-        opcode, operand = tmp[0], tmp[1]
+        args = line.split()
+        opcode, operand = args[0], args[1]
         # If the operand is a label, resolve it to its address
         if operand in labels:
             operand = labels[operand]
 
         # Handle pseudo-opcodes 
-        if opcode == "PUSH" and len(tmp) == 2:
+        if opcode == "PUSH" and len(args) == 2:
             if operand == "SP":
                 encoded_instruction = encode_instruction("PUSH.R", "0", current_address)
             elif operand == "FP":
@@ -103,6 +103,8 @@ def assemble_program(asm_code):
                 encoded_instruction = encode_instruction("PUSH.R", "2", current_address)
             elif operand == "LR":
                 encoded_instruction = encode_instruction("PUSH.R", "3", current_address)
+            elif operand == "ANC":
+                encoded_instruction = encode_instruction("PUSH.R", "4", current_address)
             elif operand[0:3] == "SPM":
                 encoded_instruction = encode_instruction("PUSH.S", operand[3], current_address)
             else:
@@ -111,42 +113,61 @@ def assemble_program(asm_code):
                     encoded_instruction = encode_instruction("PUSH.I", operand, current_address)
                 except ValueError:
                     raise "Invalid PUSH spm/special register:" + line
-
-        elif opcode == "PUSHA" and len(tmp) == 3:
+        elif opcode == "PUSHA" and len(args) == 3:
             if operand == "SP":
-                encoded_instruction = encode_instruction("PREP", tmp[2], current_address)
+                encoded_instruction = encode_instruction("PREP", args[2], current_address)
                 binary_code += encoded_instruction
                 current_address += len(encoded_instruction)
 
                 encoded_instruction = encode_instruction("PUSH.R", "0", current_address)
             elif operand == "FP":
-                encoded_instruction = encode_instruction("PREP", tmp[2], current_address)
+                encoded_instruction = encode_instruction("PREP", args[2], current_address)
                 binary_code += encoded_instruction
                 current_address += len(encoded_instruction)
 
                 encoded_instruction = encode_instruction("PUSH.R", "1", current_address)
             elif operand == "PC":
-                encoded_instruction = encode_instruction("PREP", tmp[2], current_address)
+                encoded_instruction = encode_instruction("PREP", args[2], current_address)
                 binary_code += encoded_instruction
                 current_address += len(encoded_instruction)
 
                 encoded_instruction = encode_instruction("PUSH.R", "2", current_address)
             elif operand == "LR":
-                encoded_instruction = encode_instruction("PREP", tmp[2], current_address)
+                encoded_instruction = encode_instruction("PREP", args[2], current_address)
                 binary_code += encoded_instruction
                 current_address += len(encoded_instruction)
 
                 encoded_instruction = encode_instruction("PUSH.R", "3", current_address)
             elif operand[0:3] == "SPM":
-                encoded_instruction = encode_instruction("PREP", tmp[2], current_address)
+                encoded_instruction = encode_instruction("PREP", args[2], current_address)
                 binary_code += encoded_instruction
                 current_address += len(encoded_instruction)
 
                 encoded_instruction = encode_instruction("PUSH.S", operand[3], current_address)
             else:
                 raise "Invalid PUSH spm/special register:" + line
+        elif opcode == "USA" and len(args) == 2:
+            encoded_instruction = encode_instruction("PUSH.S", operand, current_address)
+            binary_code += encoded_instruction
+            current_address += len(encoded_instruction)
+            encoded_instruction = encode_instruction("PUSH.R", "4", current_address) # ANC
+            binary_code += encoded_instruction
+            current_address += len(encoded_instruction)
+            encoded_instruction = encode_instruction("ADD", "0", current_address)
+            binary_code += encoded_instruction
+            current_address += len(encoded_instruction)
+            encoded_instruction = encode_instruction("PUSH.R", "4", current_address)
+            binary_code += encoded_instruction
+            current_address += len(encoded_instruction)
+            encoded_instruction = encode_instruction("PUSH.S", operand, current_address) # ANC
+            binary_code += encoded_instruction
+            current_address += len(encoded_instruction)
+            encoded_instruction = encode_instruction("ADD", "0", current_address)
+            binary_code += encoded_instruction
+            current_address += len(encoded_instruction)
 
-        elif len(tmp) == 2:
+        elif len(args) == 2:
+            # Handle normal case
             encoded_instruction = encode_instruction(opcode, operand, current_address)
         else:
             raise "Invalid instruction:" + line
