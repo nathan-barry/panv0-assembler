@@ -108,7 +108,7 @@ def assemble_program(asm_code):
             elif operand == "ANC":
                 encoded_instruction = encode_instruction("PUSH.R", "4", current_address)
             elif operand[0:3] == "SPM":
-                encoded_instruction = encode_instruction("PUSH.S", operand[3], current_address)
+                encoded_instruction = encode_instruction("PUSH.S", operand[3:], current_address)
             else:
                 try:
                     numVal = int(operand)
