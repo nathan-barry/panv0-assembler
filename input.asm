@@ -95,7 +95,7 @@ sum:
 	PUSH 2   ; cond = 2 = LTE
 	PUSH.S -2   ; op1 = SPM-2 = size
 	PUSHA SPM0 4  ; op2 = SPM0 = i
-	JUMP 22     ; to .loop_end. factors size of self.
+	JUMP .loop_begin     ; to .loop_end. factors size of self.
 
 .loop_begin:
 	; SPM1 = arr+i
