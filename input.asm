@@ -8,22 +8,64 @@
 ;  }
 ;
 ;  int main() {
-;    int arr[5] = {1, 2, 3, 4, 5};
+;    int arr[5] = {40, 0, 7, -500, 3000};
 ;    sum(arr, 5);
 ;  }
 ;
 
-main:
+_start:
 	; Make space for arr
 	PUSH SP
 	PUSH SP
 	PUSH -20
 	ADD
-	;Init SPM0 as *arr
-	PUSHA SPM-1 4
+	; Init SPM0 as *arr
+	PUSHA SPM0 4
 	PUSH SP
 	ADD
-	
+
+	PUSHA SPM1 4
+	PUSH 0
+	PUSH SPM0
+
+	; Init SPM1 as our iterator
+	PUSHA SPM1 4
+	PUSH SPM0
+	ADD
+	; Fill array
+	; arr[0]
+	PUSHA SPM1 4
+	PUSH 40
+	ADD
+	PUSH SPM1
+	PUSH 4
+	ADD
+	; arr[1]
+	PUSHA SPM1 4
+	PUSH 0
+	ADD
+	PUSH SPM1
+	PUSH 4
+	ADD
+	; arr[2]
+	PUSHA SPM1 4
+	PUSH 7
+	ADD
+	PUSH SPM1
+	PUSH 4
+	ADD
+	; arr[3]
+	PUSHA SPM1 4
+	PUSH -500
+	ADD
+	PUSH SPM1
+	PUSH 4
+	ADD
+	; arr[4]
+	PUSHA SPM1 4
+	PUSH 3000
+	ADD
+
 
 sum:
 	; Args in SPM regs
