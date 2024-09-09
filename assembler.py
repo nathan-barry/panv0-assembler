@@ -61,29 +61,26 @@ def assemble_program(asm_code):
     lines = [] # (instr, size)
 
 
-    # First pass: Expand pseudo-ops, remove commends, skip blank lines, record labels
+    # First pass: Record labels
     for line in asm_code:
-        line = line.split(";")[0].strip() # remove comments
-
+        line = line.split(";")[0].strip()
         args = line.split()
         if len(args) == 1:
             if line.endswith(':'):
                 labels[line[:-1]] = -1
     print("Labels:\n", labels)
 
-    # First pass: Expand pseudo-ops, remove commends, skip blank lines, record labels
+    # Second pass: Expand pseudo-ops, remove commends, skip blank lines
     for line in asm_code:
         process_line(line, lines, labels)
     print("\nLines:\n", lines)
 
-
-    # Second pass: resolve labels
+    # Third pass: Resolve label addresses
     finished = False
     while not finished:
         finished = True
         curr_addr = 0
         for i, (instr, instr_size) in enumerate(lines):
-            print(instr_size, instr)
             if instr_size == 0: # it is a label
                 if labels[instr] != curr_addr:
                     finished = False
@@ -101,6 +98,18 @@ def assemble_program(asm_code):
                         lines[i] = (lines[i][0], calc_instr_size(curr_addr + labels[operand]))
             curr_addr += instr_size
 
+    # Fourth pass: Resolve jump relative addresses
+    curr_addr = 0
+    for i, (instr, instr_size) in enumerate(lines):
+        if instr_size == 2:
+            args = instr.split(" ")
+            opcode, operand = args[0], args[1]
+            if opcode == "JUMP":
+                if operand not in labels:
+                    new_addr = curr_addr + int(operand)
+                    lines[i] = (opcode + " " + str(new_addr) , calc_instr_size(new_addr))
+        curr_addr += instr_size
+
     instructions = []
     for i, (instr, instr_size) in enumerate(lines):
         if instr_size != 0:
@@ -109,8 +118,9 @@ def assemble_program(asm_code):
     print("\nUpdated Labels\n", labels)
 
 
-    # Third pass: generate binary code
+    # Fifth pass: generate binary code
     print("\nGenerating Program:")
+    curr_addr = 0
     for line in instructions:
         args = line.split()
         opcode, operand = args[0], args[1]
@@ -119,24 +129,25 @@ def assemble_program(asm_code):
         if operand in labels:
             operand = labels[operand]
 
-        binary_code += encode_instruction(opcode, operand)
+        instr_size = calc_instr_size(operand)
+        binary_code += encode_instruction(opcode, operand, instr_size, curr_addr)
+        curr_addr += instr_size
 
     return binary_code
 
 
-def encode_instruction(opcode, operand):
+def encode_instruction(opcode, operand, instr_size, curr_addr):
     """Encode an instruction into binary format."""
     encoded = b''
     op = OPCODES[opcode]
     operand = int(operand)
-    instr_size = calc_instr_size(operand)
 
     if instr_size == 1:
         # One-byte Instr, Layout: `xxxx_ooo0`
         suffix = 0b0
         encoded = struct.pack('<i', (operand << 4) | (op << 1) | suffix)[0:1]
         # Debug info
-        print(f"One-Byte: xxxx_ooo0\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
+        print(f"CurrAddr: {curr_addr}\tOne-Byte: xxxx_ooo0\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
         s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
         s = ("0"*(8-len(s))) + s
     elif instr_size == 2:
@@ -144,7 +155,7 @@ def encode_instruction(opcode, operand):
         suffix = 0b0001
         encoded = struct.pack('<i', (operand << 8) | (op << 4) | suffix)[0:2]
         # Debug info
-        print(f"Two-Byte: xxxx_xxxx oooo_0001\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
+        print(f"CurrAddr: {curr_addr}\tTwo-Byte: xxxx_xxxx oooo_0001\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
         s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
         s = ("0"*(16-len(s))) + s
     elif instr_size == 3:
@@ -152,7 +163,7 @@ def encode_instruction(opcode, operand):
         suffix = 0b0101
         encoded = struct.pack('<i', (operand << 10) | (op << 4) | suffix)[0:3]
         # Debug info
-        print(f"Three-Byte: xxxx_xxxx xxxx_xxoo oooo_0101\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
+        print(f"CurrAddr: {curr_addr}\tThree-Byte: xxxx_xxxx xxxx_xxoo oooo_0101\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
         s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
         s = ("0"*(24-len(s))) + s
     elif instr_size == 4:
@@ -160,7 +171,7 @@ def encode_instruction(opcode, operand):
         suffix = 0b1101
         encoded = struct.pack('<i', (operand << 12) | (op << 4) | suffix)
         # Debug info
-        print(f"Four-Byte: xxxx_xxxx xxxx_xxxx xxxx_oooo oooo_0101\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
+        print(f"CurrAddr: {curr_addr}\tFour-Byte: xxxx_xxxx xxxx_xxxx xxxx_oooo oooo_0101\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
         s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
         s = ("0"*(32-len(s))) + s
     else:
