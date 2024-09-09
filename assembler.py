@@ -58,114 +58,69 @@ def assemble_program(asm_code):
     """Assemble the assembly code into binary code."""
     binary_code = b''
     labels = {}
-    instructions = []
-    current_address = 0
+    lines = [] # (instr, size)
 
-    # First pass: resolve labels
+
+    # First pass: Expand pseudo-ops, remove commends, skip blank lines, record labels
     for line in asm_code:
         line = line.split(";")[0].strip() # remove comments
-        if line.startswith(';') or line == '': # skip blank lines
-            continue
 
-        if line.endswith(':'):
-            labels[line[:-1]] = current_address
-        else:
-            instr_size = 1  # Default length is 1 byte
+        args = line.split()
+        if len(args) == 1:
+            if line.endswith(':'):
+                labels[line[:-1]] = -1
+    print("Labels:\n", labels)
 
-            args = line.split()
-            if len(args) == 1:
-                args.append("0")
-            opcode, operand = args[0], args[1]
+    # First pass: Expand pseudo-ops, remove commends, skip blank lines, record labels
+    for line in asm_code:
+        process_line(line, lines, labels)
+    print("\nLines:\n", lines)
 
-            # Expand pseudo-ops
-            if opcode == "PUSH" and len(args) == 2:
-                if operand == "SP":
-                    instructions.append("PUSH.R 0")
-                elif operand == "FP":
-                    instructions.append("PUSH.R 1")
-                elif operand == "PC":
-                    instructions.append("PUSH.R 2")
-                elif operand == "LR":
-                    instructions.append("PUSH.R 3")
-                elif operand == "ANC":
-                    instructions.append("PUSH.R 4")
-                elif operand[0:3] == "SPM":
-                    instructions.append("PUSH.S " + operand[3:])
-                    instr_size = calc_instr_size(int(operand[3:]))
-                else:
-                    try:
-                        numVal = int(operand)
-                        instructions.append("PUSH.I " + operand)
-                    except ValueError:
-                        raise "Invalid PUSH spm/special register:" + line
-            elif opcode == "PUSHA" and len(args) == 3:
-                if operand == "SP":
-                    instructions.append("PREP " + args[2])
-                    current_address += calc_instr_size(int(args[2]))
-                    instructions.append("PUSH.R 0")
-                elif operand == "FP":
-                    instructions.append("PREP " + args[2])
-                    current_address += calc_instr_size(int(args[2]))
-                    instructions.append("PUSH.R 1")
-                elif operand == "PC":
-                    instructions.append("PREP " + args[2])
-                    current_address += calc_instr_size(int(args[2]))
-                    instructions.append("PUSH.R 2")
-                elif operand == "LR":
-                    instructions.append("PREP " + args[2])
-                    current_address += calc_instr_size(int(args[2]))
-                    instructions.append("PUSH.R 3")
-                elif operand == "ANC":
-                    instructions.append("PREP " + args[2])
-                    current_address += calc_instr_size(int(args[2]))
-                    instructions.append("PUSH.R 4")
-                elif operand[0:3] == "SPM":
-                    instructions.append("PREP " + args[2])
-                    current_address += calc_instr_size(int(args[2]))
-                    instructions.append("PUSH.S " + operand[3:])
-                    instr_size = calc_instr_size(int(operand[3:]))
-                else:
-                    raise "Invalid PUSH spm/special register:" + line
-            elif opcode == "USA" and len(args) == 2:
-                instructions.append("PUSH.S " + operand)
-                current_address += calc_instr_size(int(operand))
-                instructions.append("PUSH.R 4")
-                current_address += 1
-                instructions.append("ADD 0")
-                current_address += 1
-                instructions.append("PUSH.R 4")
-                current_address += 1
-                instructions.append("PUSH.S " + operand)
-                current_address += calc_instr_size(int(operand))
-                instructions.append("ADD 0")
-            # Handle normal case
-            elif len(args) == 2:
-                # Handle jump
-                if opcode == "JUMP":
-                    addr = str(current_address + int(operand))
-                    instructions.append(opcode + addr)
-                    instr_size = calc_instr_size(addr)
-                else:
-                    instructions.append(line)
-                    instr_size = calc_instr_size(int(operand))
+
+    # Second pass: resolve labels
+    finished = False
+    while not finished:
+        finished = True
+        curr_addr = 0
+        for i, (instr, instr_size) in enumerate(lines):
+            print(instr_size, instr)
+            if instr_size == 0: # it is a label
+                if labels[instr] != curr_addr:
+                    finished = False
+                    labels[instr] = curr_addr
             else:
-                raise "Invalid instruction:" + line
-            current_address += instr_size
+                args = instr.split(" ")
+                if len(args) < 2:
+                    print("\n\n", args)
+                    raise "Args not len 2"
+                opcode, operand = args[0], args[1]
+                if opcode == "JUMP":
+                    if operand in labels:
+                        # update instr size 
+                        print(curr_addr, labels[operand])
+                        lines[i] = (lines[i][0], calc_instr_size(curr_addr + labels[operand]))
+            curr_addr += instr_size
 
-    print("Instructions:\n", instructions)
+    instructions = []
+    for i, (instr, instr_size) in enumerate(lines):
+        if instr_size != 0:
+            instructions.append(instr)
+    print("\nInstructions:\n", instructions)
+    print("\nUpdated Labels\n", labels)
 
-    # Second pass: generate binary code
+
+    # Third pass: generate binary code
     print("\nGenerating Program:")
     for line in instructions:
         args = line.split()
-        if len(args) == 1:
-            args.append("0")
         opcode, operand = args[0], args[1]
+
         # If the operand is a label, resolve it to its address
         if operand in labels:
             operand = labels[operand]
 
-        binary_code += encode_instruction(opcode, operand, current_address)
+        binary_code += encode_instruction(opcode, operand)
+
     return binary_code
 
 
@@ -184,7 +139,7 @@ def encode_instruction(opcode, operand):
         print(f"One-Byte: xxxx_ooo0\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
         s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
         s = ("0"*(8-len(s))) + s
-    if instr_size == 2:
+    elif instr_size == 2:
         # Two-byte Instr, Layout: `xxxx_xxxx oooo_0001`
         suffix = 0b0001
         encoded = struct.pack('<i', (operand << 8) | (op << 4) | suffix)[0:2]
@@ -192,7 +147,7 @@ def encode_instruction(opcode, operand):
         print(f"Two-Byte: xxxx_xxxx oooo_0001\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
         s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
         s = ("0"*(16-len(s))) + s
-    if instr_size == 3:
+    elif instr_size == 3:
         # Three-byte Instr, Layout: `xxxx_xxxx xxxx_xxoo oooo_0101`
         suffix = 0b0101
         encoded = struct.pack('<i', (operand << 10) | (op << 4) | suffix)[0:3]
@@ -200,7 +155,7 @@ def encode_instruction(opcode, operand):
         print(f"Three-Byte: xxxx_xxxx xxxx_xxoo oooo_0101\n\tsuffix: {bin(suffix)}\n\topcode: {opcode}\t(binary): {bin(op)}\t(decimal): {op}\n\toperand: {operand}\t(binary) {bin(operand)}")
         s = str(bin(int.from_bytes(encoded, byteorder='little')))[2:]
         s = ("0"*(24-len(s))) + s
-    if instr_size == 4:
+    elif instr_size == 4:
         # Four-byte Instr, Layout: `xxxx_xxxx xxxx_xxxx xxxx_oooo oooo_1101`
         suffix = 0b1101
         encoded = struct.pack('<i', (operand << 12) | (op << 4) | suffix)
@@ -223,7 +178,80 @@ def encode_instruction(opcode, operand):
 
     return encoded
 
+def process_line(line, lines, labels):
+    line = line.split(";")[0].strip() # remove comments
+    if line.startswith(';') or line == '': # skip blank lines
+        return
+
+    args = line.split()
+    if len(args) == 1:
+        if line.endswith(':'):
+            lines.append((line[:-1], 0)) # 0 indicates it's a label
+            return
+        else:
+            args.append("0") # add 0 operand
+    opcode, operand = args[0], args[1]
+
+    if opcode == "PUSH" and len(args) == 2:
+        if operand == "SP":
+            lines.append(("PUSH.R 0", 1))
+        elif operand == "FP":
+            lines.append(("PUSH.R 1", 1))
+        elif operand == "PC":
+            lines.append(("PUSH.R 2", 1))
+        elif operand == "LR":
+            lines.append(("PUSH.R 3", 1))
+        elif operand == "ANC":
+            lines.append(("PUSH.R 4", 1))
+        elif operand[0:3] == "SPM":
+            lines.append(("PUSH.S " + operand[3:], calc_instr_size(operand[3:])))
+        else:
+            try:
+                numVal = int(operand)
+                lines.append(("PUSH.I " + operand, calc_instr_size(operand)))
+            except ValueError:
+                raise "Invalid PUSH spm/special register:" + line
+    elif opcode == "PUSHA" and len(args) == 3:
+        if operand == "SP":
+            lines.append(("PREP " + args[2], calc_instr_size(args[2])))
+            lines.append(("PUSH.R 0", 1))
+        elif operand == "FP":
+            lines.append(("PREP " + args[2], calc_instr_size(args[2])))
+            lines.append(("PUSH.R 1", 1))
+        elif operand == "PC":
+            lines.append(("PREP " + args[2], calc_instr_size(args[2])))
+            lines.append(("PUSH.R 2", 1))
+        elif operand == "LR":
+            lines.append(("PREP " + args[2], calc_instr_size(args[2])))
+            lines.append(("PUSH.R 3", 1))
+        elif operand == "ANC":
+            lines.append(("PREP " + args[2], calc_instr_size(args[2])))
+            lines.append(("PUSH.R 4", 1))
+        elif operand[0:3] == "SPM":
+            lines.append(("PREP " + args[2], calc_instr_size(args[2])))
+            lines.append(("PUSH.S " + operand[3:], calc_instr_size(operand[3:])))
+        else:
+            raise "Invalid PUSH spm/special register:" + line
+    elif opcode == "USA" and len(args) == 2:
+        lines.append(("PUSH.S " + operand, calc_instr_size(operand)))
+        lines.append(("PUSH.R 4", 1))
+        lines.append(("ADD 0", 1))
+        lines.append(("PUSH.R 4", 1))
+        lines.append(("PUSH.S " + operand, calc_instr_size(operand)))
+        lines.append(("ADD 0", 1))
+    # Handle normal case
+    elif len(args) == 2:
+        if operand in labels:
+            lines.append((line, 1)) # Handle label
+        else:
+            lines.append((opcode + " " + operand, calc_instr_size(operand))) # Handle label
+    else:
+        raise "Invalid instruction:" + line
+
 def calc_instr_size(operand):
+    if type(operand) == str:
+        operand = int(operand)
+
     if operand >= -8 and operand <= 7:
         return 1
     elif operand >= -128 and operand <= 127:
