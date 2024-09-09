@@ -94,7 +94,6 @@ def assemble_program(asm_code):
                 if opcode == "JUMP":
                     if operand in labels:
                         # update instr size 
-                        print(curr_addr, labels[operand])
                         lines[i] = (lines[i][0], calc_instr_size(curr_addr + labels[operand]))
             curr_addr += instr_size
 
@@ -271,7 +270,6 @@ def calc_instr_size(operand):
         return 3
     elif operand >= -524288 and operand <= 524287:
         return 4
-
 
 if __name__ == "__main__":
     main()

@@ -119,8 +119,9 @@ sum:
 	PUSH.S 0   ; op1 = SPM0 = i
 	PUSH.I 1   ; op2 = 1
 	ADD 4
-	JUMP -15    ; to .loop_begin
-	.loop_end:
+	JUMP .loop_begin    ; to .loop_begin
+
+.loop_end:
 	; SP += 8
 	PUSH.R 0   ; dst = r0 = SP
 	PUSH.R 0   ; op1 = r0 = SP
