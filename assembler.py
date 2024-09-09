@@ -94,20 +94,8 @@ def assemble_program(asm_code):
                 if opcode == "JUMP":
                     if operand in labels:
                         # update instr size 
-                        lines[i] = (lines[i][0], calc_instr_size(curr_addr + labels[operand]))
+                        lines[i] = (lines[i][0], calc_instr_size(labels[operand] - curr_addr))
             curr_addr += instr_size
-
-    # Fourth pass: Resolve jump relative addresses
-    curr_addr = 0
-    for i, (instr, instr_size) in enumerate(lines):
-        if instr_size == 2:
-            args = instr.split(" ")
-            opcode, operand = args[0], args[1]
-            if opcode == "JUMP":
-                if operand not in labels:
-                    new_addr = curr_addr + int(operand)
-                    lines[i] = (opcode + " " + str(new_addr) , calc_instr_size(new_addr))
-        curr_addr += instr_size
 
     instructions = []
     for i, (instr, instr_size) in enumerate(lines):
@@ -117,19 +105,27 @@ def assemble_program(asm_code):
     print("\nUpdated Labels\n", labels)
 
 
-    # Fifth pass: generate binary code
+    # Fourth pass: generate binary code
     print("\nGenerating Program:")
     curr_addr = 0
     for line in instructions:
         args = line.split()
         opcode, operand = args[0], args[1]
 
-        # If the operand is a label, resolve it to its address
+        # Handle labels
+        instr_size = 1
         if operand in labels:
-            operand = labels[operand]
-
-        instr_size = calc_instr_size(operand)
-        binary_code += encode_instruction(opcode, operand, instr_size, curr_addr)
+            label_addr = labels[operand]
+            if opcode == "JUMP":
+                new_addr = label_addr - curr_addr
+                instr_size = calc_instr_size(new_addr)
+                binary_code += encode_instruction(opcode, new_addr, instr_size, curr_addr)
+            else:
+                instr_size = calc_instr_size(label_addr)
+                binary_code += encode_instruction(opcode, label_addr, instr_size, curr_addr)
+        else:
+            instr_size = calc_instr_size(operand)
+            binary_code += encode_instruction(opcode, operand, instr_size, curr_addr)
         curr_addr += instr_size
 
     return binary_code
