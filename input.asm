@@ -105,17 +105,17 @@ sum:
 	PUSH.I 2   ; shift = 2
 	ADD 4       ; 4B Add
 	; total += *(SPM1)
-	PREP 1
+	DSIZE 1
 	PUSH.R 0   ; dst = *r0 = *SP
-	PREP 1
+	DSIZE 1
 	PUSH.R 0   ; op1 = *r0 = *SP
-	PREP 1
+	DSIZE 1
 	PUSH.S 1   ; op2 = SPM1 = *(arr+i)
 	ADD 4       ; 4B Add
 	; i ++
-	PREP 1
+	DSIZE 1
 	PUSH.S 0   ; dst = SPM0 = i
-	PREP 1
+	DSIZE 1
 	PUSH.S 0   ; op1 = SPM0 = i
 	PUSH.I 1   ; op2 = 1
 	ADD 4
