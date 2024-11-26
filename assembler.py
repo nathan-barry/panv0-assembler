@@ -6,7 +6,7 @@ import sys
 
 # Opcode dictionary based on the PANv0 ISA
 OPCODES = {
-    "PREP":     0,
+    "DSIZE":     0,
     "PUSH.I":   1,
     "PUSH.S":   2,
     "PUSH.R":   3,
@@ -219,22 +219,22 @@ def process_line(line, lines, labels):
                 raise "Invalid PUSH spm/special register:" + line
     elif opcode == "PUSHA" and len(args) == 3:
         if operand == "SP":
-            lines.append(("PREP " + args[2], calc_instr_size(args[2])))
+            lines.append(("DSIZE " + args[2], calc_instr_size(args[2])))
             lines.append(("PUSH.R 0", 1))
         elif operand == "FP":
-            lines.append(("PREP " + args[2], calc_instr_size(args[2])))
+            lines.append(("DSIZE " + args[2], calc_instr_size(args[2])))
             lines.append(("PUSH.R 1", 1))
         elif operand == "PC":
-            lines.append(("PREP " + args[2], calc_instr_size(args[2])))
+            lines.append(("DSIZE " + args[2], calc_instr_size(args[2])))
             lines.append(("PUSH.R 2", 1))
         elif operand == "LR":
-            lines.append(("PREP " + args[2], calc_instr_size(args[2])))
+            lines.append(("DSIZE " + args[2], calc_instr_size(args[2])))
             lines.append(("PUSH.R 3", 1))
         elif operand == "ANC":
-            lines.append(("PREP " + args[2], calc_instr_size(args[2])))
+            lines.append(("DSIZE " + args[2], calc_instr_size(args[2])))
             lines.append(("PUSH.R 4", 1))
         elif operand[0:3] == "SPM":
-            lines.append(("PREP " + args[2], calc_instr_size(args[2])))
+            lines.append(("DSIZE " + args[2], calc_instr_size(args[2])))
             lines.append(("PUSH.S " + operand[3:], calc_instr_size(operand[3:])))
         else:
             raise "Invalid PUSH spm/special register:" + line
