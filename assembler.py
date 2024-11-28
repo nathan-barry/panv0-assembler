@@ -22,7 +22,7 @@ def main():
         sys.exit(1)
 
     input_file = sys.argv[1]
-    output_file = "output.bin" if len(sys.argv) == 2 else sys.argv[2] 
+    output_file = "output.bin" if len(sys.argv) == 2 else sys.argv[2]
 
     # Read input file
     with open(input_file, 'r') as f:
@@ -95,7 +95,7 @@ def assemble_program(asm_code):
         if operand in labels:
             operand = labels[operand]
 
-        # Handle pseudo-opcodes 
+        # Handle pseudo-opcodes
         if opcode == "PUSH" and len(args) == 2:
             if operand == "SP":
                 encoded_instruction = encode_instruction("PUSH.R", "0", current_address)
@@ -108,7 +108,7 @@ def assemble_program(asm_code):
             elif operand == "ANC":
                 encoded_instruction = encode_instruction("PUSH.R", "4", current_address)
             elif operand[0:3] == "SPM":
-                encoded_instruction = encode_instruction("PUSH.S", operand[3], current_address)
+                encoded_instruction = encode_instruction("PUSH.S", operand[3:], current_address)
             else:
                 try:
                     numVal = int(operand)
