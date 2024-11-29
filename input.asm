@@ -114,12 +114,12 @@ sum:
 	; SPM1 = arr+i
 	PUSH SPM1   ; dst = SPM1
 	PUSH SPM-1  ; op1 = SPM-1 = arr
-	PUSH SPM0   ; op2 = SPM0 = i
+	PUSHA SPM0 4 ; op2 = SPM0 = i
 	PUSH 2      ; shift = 2
-	ADD 4       ; 4B Add
+	ADD         ; 4B Add
 	; total += *(SPM1)
-	PUSHA SP 1  ; dst = *r0 = *SP
-	PUSHA SP 1  ; op1 = *r0 = *SP
+	PUSHA SP 4  ; dst = *r0 = *SP
+	PUSHA SP 4  ; op1 = *r0 = *SP
 	PUSHA SPM1 4 ; op2 = SPM1 = *(arr+i)`
 	ADD 4       ; 4B Add
 	; i ++
